@@ -38,3 +38,24 @@ Ensure you have the following installed on your system:
 
    ```bash
    git clone https://github.com/yourusername/secure-chat-and-data-transfer.git
+2. Change to the project directory:
+   cd secure-chat-and-data-transfer
+3. Install the required dependencies:
+   pip install -r requirements.txt
+   
+## Usage
+1. Run the Flask development server:
+   python app.py
+2. Open your browser and navigate to http://127.0.0.1:5000 to access the application.
+3. Follow the instructions on the login and registration pages, complete the robot verification challenge, and start using the chat system.
+
+File Transfer System
+To access the file transfer system, click on the "File Transfer" button in the chat system.
+
+1. Upload files of supported formats (pdf, png, jpg, jpeg, gif).
+2. Shared files are broadcasted to all connected users.
+
+## License
+This project is licensed under the MIT License.
+
+Make sure to replace placeholder URLs and project-specific information in the template. Additionally, consider creating a `CONTRIBUTING.md` file with guidelines for contributors if you expect collaboration on your project.
