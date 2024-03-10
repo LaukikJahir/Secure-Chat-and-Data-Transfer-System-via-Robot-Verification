@@ -1,8 +1,11 @@
 # app.py
 from flask import Flask, render_template, request, session, redirect, url_for, flash, send_from_directory
-from flask_socketio import SocketIO, emit
-from flask import render_template, url_for
+from flask_socketio import SocketIO, emit, join_room
+from flask import render_template, request, url_for, redirect, flash
+from flask_socketio import emit
 from flask import send_file, send_from_directory
+from flask_socketio import join_room
+from flask import session
 import os
 from werkzeug.utils import secure_filename
 import random
@@ -67,9 +70,23 @@ def index():
     # If the method is GET, render the login form
     return render_template('login.html', challenge=challenge)
 
+# Define a global variable to store shared files
+shared_files = []
+
+@socketio.on('file_shared')
+def handle_file_shared(data):
+    username = data['username']
+    filename = data['filename']
+
+    # Generate file path
+    file_path = url_for('uploaded_file', filename=filename, _external=True)
+
+    # Broadcast file information to all connected users
+    socketio.emit('file_shared', {'username': username, 'filename': filename, 'file_path': file_path})
+
 @app.route('/file_transfer', methods=['GET', 'POST'])
 def file_transfer():
-    image_preview = None
+    global shared_files  # Make sure to declare shared_files as a global variable
     error = None
 
     if request.method == 'POST':
@@ -86,17 +103,22 @@ def file_transfer():
                 file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 file.save(file_path)
 
-                if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
-                    image_preview = url_for('uploaded_file', filename=filename)
-                else:
-                    return send_file(file_path, as_attachment=True)
+                # Broadcast file information to all connected users
+                file_url = url_for('uploaded_file', filename=filename)
+                socketio.emit('file_shared', {'username': session.get('username', 'Unknown'), 'filename': filename, 'file_path': file_url}, namespace='/')
 
-    return render_template('file_transfer.html', image_preview=image_preview, error=error)
 
+                # Update the shared_files list with the new shared file information
+                shared_files.append({'username': session.get('username', 'Unknown'), 'filename': filename, 'file_path': file_url})
+
+    # Get the list of shared files from the updated shared_files list
+    shared_files_list = [{'filename': file['filename'], 'username': file['username'], 'file_path': file['file_path']} for file in shared_files]
+
+    return render_template('file_transfer.html', error=error, shared_files=shared_files_list)
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
-    return send_file(os.path.join(app.config['UPLOAD_FOLDER'], filename), as_attachment=False)
+    return send_file(os.path.join(app.config['UPLOAD_FOLDER'], filename), as_attachment=True)
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -171,7 +193,7 @@ def chat():
 def handle_message(data):
     username = session.get('username', 'Unknown')  # Get the username from the session or set to 'Unknown'
     emit('message', {'username': username, 'message': data['message']}, broadcast=True)
-
+    
 if __name__ == '__main__':
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-    socketio.run(app, debug=True, host='0.0.0.0')  # Allow external access
+    socketio.run(app, debug=True, host='0.0.0.0', port=5000)  # Allow external access on port 5000
