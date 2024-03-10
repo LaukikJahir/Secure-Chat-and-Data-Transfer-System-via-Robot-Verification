@@ -57,5 +57,3 @@ To access the file transfer system, click on the "File Transfer" button in the c
 
 ## License
 This project is licensed under the MIT License.
-
-Make sure to replace placeholder URLs and project-specific information in the template. Additionally, consider creating a `CONTRIBUTING.md` file with guidelines for contributors if you expect collaboration on your project.
